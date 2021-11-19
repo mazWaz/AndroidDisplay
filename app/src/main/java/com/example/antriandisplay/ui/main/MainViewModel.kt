@@ -7,6 +7,7 @@ import com.tinder.scarlet.WebSocket
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
@@ -22,6 +23,7 @@ class MainViewModel @Inject constructor(
         object Empty: Test()
     }
     val _test = MutableStateFlow<Test>(Test.Empty)
+    val test: StateFlow<Test> = _test
 
     init {
         service.observeWebSocket().flowOn(Dispatchers.IO).onEach {
@@ -35,6 +37,7 @@ class MainViewModel @Inject constructor(
             }
         }
         service.observeTicker().flowOn(Dispatchers.IO).onEach {
+            _test.value = Test.Sucess(it)
             Log.d("Event Main Data", it)
         }
     }
