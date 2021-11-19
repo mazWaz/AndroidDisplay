@@ -9,6 +9,7 @@ import com.squareup.moshi.Moshi
 import com.tinder.scarlet.Scarlet
 import com.tinder.scarlet.lifecycle.android.AndroidLifecycle
 import com.tinder.scarlet.messageadapter.moshi.MoshiMessageAdapter
+import com.tinder.scarlet.retry.ExponentialWithJitterBackoffStrategy
 import com.tinder.scarlet.websocket.okhttp.newWebSocketFactory
 import dagger.Module
 import dagger.Provides
@@ -17,6 +18,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -41,11 +43,12 @@ object AppModule {
     fun provideHttpClient(): OkHttpClient {
         val logger = HttpLoggingInterceptor()
             .setLevel(
-                if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
+                if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
                 else HttpLoggingInterceptor.Level.NONE
             )
 
         return OkHttpClient.Builder()
+            .pingInterval(5, TimeUnit.SECONDS)
             .addInterceptor(logger)
             .build()
     }
@@ -54,9 +57,10 @@ object AppModule {
     @Provides
     fun provideScarlet(application: App, client: OkHttpClient, moshi: Moshi): Scarlet {
         return Scarlet.Builder()
-            .webSocketFactory(client.newWebSocketFactory("wss://ws-feed.pro.coinbase.com"))
+            .webSocketFactory(client.newWebSocketFactory("ws://192.168.137.39/ws"))
             .addMessageAdapterFactory(MoshiMessageAdapter.Factory(moshi))
             .addStreamAdapterFactory(FlowStreamAdapter.Factory())
+            .backoffStrategy(ExponentialWithJitterBackoffStrategy(5000,500))
             .lifecycle(AndroidLifecycle.ofApplicationForeground(application))
             .build()
     }
