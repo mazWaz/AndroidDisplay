@@ -17,7 +17,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         lifecycleScope.launchWhenStarted {
             viewModel.test.collect { event ->
-                Log.d("MainActivity", event.toString())
+                when(event){
+                    is MainViewModel.Test.Success ->{
+                        Log.d("MainActivity", event.response)
+                    }
+                    else -> Unit
+                }
+
             }
         }
 
